@@ -1,10 +1,14 @@
+// Omer Zafrany 318877420
+// Lusil Grozdanov 208493122
+// Elad Samuelov 314752643
+
 package il.ac.hit.quizzy;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-
-public class SimpleCSVQuizFilesDAO  implements IQuizFilesDAO {
+public class SimpleCSVQuizFilesDAO implements IQuizFilesDAO {
     private static SimpleCSVQuizFilesDAO instance;
 
     private SimpleCSVQuizFilesDAO() {
@@ -21,42 +25,46 @@ public class SimpleCSVQuizFilesDAO  implements IQuizFilesDAO {
     @Override
     public void saveQuizToFile(IQuiz quiz, String fileName) throws QuizException {
         try (PrintWriter writer = new PrintWriter(new FileWriter(fileName))) {
-            writer.println(quiz.getName()); // Write the quiz name
-            writer.println(quiz.getType());
+            writer.println(quiz.getName());
+            writer.println(quiz.getType().toUpperCase());
 
-            // Serialize each question
             List<IQuizQuestion> questions = quiz.getQuestions();
-            for (int j = 0; j < quiz.getQuestions().size(); j++) {         //QuizQuestion question : quiz.getQuestions().size()) {
-                writer.println(questions.get(j).getTitle()); // Write question title
-                writer.println(questions.get(j).getQuestion()); // Write question text
+            for (IQuizQuestion question : questions) {
+                writer.println(question.getTitle()); // Write question title
+                writer.println(question.getQuestion()); // Write question text
 
                 // Serialize each answer
-                String[] currq = questions.get(j).getAnswers();
-                boolean[] currect = questions.get(j).getboolanswers();
-                for (int i = 0; i < 5; i++) {
-                    writer.println(currq[i] + "," + currect[i]); // Write answer text and correctness
+                String[] answers = question.getAnswers();
+                boolean[] correct = question.getboolanswers();
+                for (int i = 0; i < answers.length; i++) {
+                    writer.println(answers[i] + "," + correct[i]);
                 }
                 writer.println(); // Separate questions with a blank line
             }
         } catch (IOException e) {
-            //throw new QuizException("Error saving quiz to file: " + e.getMessage(), e);
+            throw new QuizException("Error saving quiz to file: " + e.getMessage());
         }
     }
 
     @Override
     public IQuiz loadQuizFromFile(String fileName) throws QuizException {
         try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+            // Read quiz name and type
             String quizName = reader.readLine();
-            String quizType = reader.readLine();
+            String quizType = reader.readLine().toUpperCase();
+
             IQuiz quiz;
-            if (quizType == "GUI") {
+            if (quizType.equals("GUI")) {
                 quiz = new GUIQuiz();
-            } else {
+            } else if (quizType.equals("TERMINAL")) {
                 quiz = new TerminalQuiz();
+            } else {
+                throw new QuizException("Unknown quiz type: " + quizType);
             }
 
             quiz.setName(quizName);
 
+            // Parse the questions
             String line;
             IQuizQuestionBuilder builder = new QuizQuestion.Builder();
             List<IQuizQuestion> questions = new ArrayList<>();
@@ -64,20 +72,21 @@ public class SimpleCSVQuizFilesDAO  implements IQuizFilesDAO {
                 if (line.isEmpty()) {
                     // End of current question
                     questions.add(builder.create());
-                    builder = new QuizQuestion.Builder();
+                    builder = new QuizQuestion.Builder(); // Reset the builder for the next question
                 } else {
                     String[] parts = line.split(",", 2);
                     if (parts.length == 2) {
-                        // Handle answer line
+                        // It's an answer line
                         builder.addAnswer(parts[0], Boolean.parseBoolean(parts[1]));
                     } else if (builder.getTitle() == null) {
-                        builder.setTitle(parts[0]);
+                        // It's the title of the question
+                        builder.setTitle(line);
                     } else {
-                        builder.setQuestion(parts[0]);
+                        // It's the question text
+                        builder.setQuestion(line);
                     }
                 }
             }
-            // Add the last question if there is any
             if (builder.getTitle() != null) {
                 questions.add(builder.create());
             }
@@ -89,8 +98,7 @@ public class SimpleCSVQuizFilesDAO  implements IQuizFilesDAO {
 
             return quiz;
         } catch (IOException e) {
-            return null;
-            //throw new QuizException("Error loading quiz from file: " + e.getMessage(), e);
+            throw new QuizException("Error loading quiz from file: " + e.getMessage());
         }
     }
 }
