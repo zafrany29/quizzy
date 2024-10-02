@@ -40,6 +40,39 @@ public class Main {
         dao.saveQuizToFile(quiz,"quiz1.data");
         IQuiz loadedQuiz = dao.loadQuizFromFile("quiz1.data");
         loadedQuiz.start();
+
+        QuizFactory factory2 = new QuizFactory();
+        IQuiz quiz2 = factory2.createQuiz(QuizType.TERMINAL);
+        quiz2.setName("My Quizz");
+        //creating 1st question
+        IQuizQuestionBuilder builder3 = new QuizQuestion.Builder();
+        builder3.setTitle("We Love Canada");
+        builder3.setQuestion("Canada starts with…?");
+        builder3.addAnswer("A",false);
+        builder3.addAnswer("B",false);
+        builder3.addAnswer("C",true);
+        builder3.addAnswer("D",false);
+        builder3.addAnswer("E",false);
+        IQuizQuestion question3 = builder3.create();
+        //creating 2nd question
+        IQuizQuestionBuilder builder4 = new QuizQuestion.Builder();
+        builder4.setTitle("We Love Australia");
+        builder4.setQuestion("Australia starts with…?");
+        builder4.addAnswer("A",true);
+        builder4.addAnswer("B",false);
+        builder4.addAnswer("C",false);
+        builder4.addAnswer("D",false);
+        builder4.addAnswer("E",false);
+        IQuizQuestion question4 = builder4.create();
+
+        //adding questions to quiz
+        quiz2.addQuestion(question3);
+        quiz2.addQuestion(question4);
+        //saving quiz to file and read it back
+        IQuizFilesDAO dao2 = SimpleCSVQuizFilesDAO.getInstance();
+        dao2.saveQuizToFile(quiz2,"quiz2.data");
+        IQuiz loadedQuiz2 = dao2.loadQuizFromFile("quiz2.data");
+        loadedQuiz2.start();
     }
 
 }
